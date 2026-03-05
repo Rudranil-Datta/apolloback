@@ -129,6 +129,84 @@ patientSchema.methods.generateAccessToken = async function () {
         });
 }
 
+patientSchema.methods.updatePassword = async function (newPassword) {
+  const hash = await bcrypt.hash(newPassword, 10);
+  this.password = hash;
+  await this.save();
+};
+
+patientSchema.methods.toSafeObject = function () {
+  const patient = this.toObject();
+  delete patient.password;
+  delete patient.refreshToken;
+  return patient;
+};
+
+patientSchema.methods.addEmergencyContact = async function (contact) {
+  this.emergencyContacts.push(contact);
+  await this.save();
+};
+
+patientSchema.methods.getPrimaryEmergencyContact = function () {
+  if (!this.emergencyContacts || this.emergencyContacts.length === 0) {
+    return null;
+  }
+
+  return this.emergencyContacts[0];
+};
+
+patientSchema.methods.addEmergencyContact = async function (contact) {
+  this.emergencyContacts.push(contact);
+  await this.save();
+};
+
+patientSchema.methods.hasChronicCondition = function () {
+  return (
+    this.medicalHistory.diabetes ||
+    this.medicalHistory.asthma ||
+    this.medicalHistory.heartDisease
+  );
+};
+
+patientSchema.methods.updateLocation = async function (lat, lng) {
+  this.lastKnownLocation = { lat, lng };
+  await this.save();
+};
+
+patientSchema.statics.findByLogin = async function (login) {
+  return await this.findOne({
+    $or: [
+      { email: login.toLowerCase() },
+      { username: login.toLowerCase() }
+    ]
+  });
+};
+
+patientSchema.statics.searchPatients = async function (query) {
+  return await this.find({
+    name: { $regex: query, $options: "i" }
+  }).limit(20);
+};
+
+patientSchema.statics.getChronicPatients = async function () {
+  return await this.find({
+    $or: [
+      { "medicalHistory.diabetes": true },
+      { "medicalHistory.asthma": true },
+      { "medicalHistory.heartDisease": true }
+    ]
+  });
+};
+
+patientSchema.virtual("ageGroup").get(function () {
+  if (this.age < 18) return "Minor";
+  if (this.age < 60) return "Adult";
+  return "Senior";
+});
+
+patientSchema.index({ email: 1 });
+patientSchema.index({ username: 1 });
+patientSchema.index({ phone: 1 });
 
 const patients = mongoose.model("patients", patientSchema);
 export default patients;

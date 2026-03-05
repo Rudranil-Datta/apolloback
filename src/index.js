@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import express from "express";
 import { verifyjwt } from "./middlewares/verifyJWT.js";
 import patientRouter from "./routes/patientRouter.js";
+import doctorRouter from "./routes/doctorRouter.js";
+import vitalsRouter from "./routes/vitalsRouter.js";
 
 
 import cors from "cors";
@@ -14,7 +16,7 @@ app.use(cors({
     credentials: true
 }))
 
-app.use('/', patientRouter);
+//app.use('/', patientRouter);
 const getUser = (req, res, next) => {
     const user = req.user;
     if (!user) {
@@ -23,6 +25,12 @@ const getUser = (req, res, next) => {
     return res.status(200).json({ user });
 }
 app.get('/getuser', verifyjwt, getUser);
+
+app.use("/patients", patientRouter);
+app.use("/doctors", doctorRouter);
+app.use("/vitals", vitalsRouter);
+
+
 
 
 
