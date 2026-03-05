@@ -1,0 +1,44 @@
+import mongoose from "mongoose";
+import express from "express";
+import { verifyjwt } from "./middlewares/verifyJWT.js";
+import patientRouter from "./routes/patientRouter.js";
+
+
+import cors from "cors";
+
+const app = express();
+const PORT = process.env.PORT;
+
+app.use(cors({
+    origin: process.env.CORS_ORIGINS,
+    credentials: true
+}))
+
+app.use('/', patientRouter);
+const getUser = (req, res, next) => {
+    const user = req.user;
+    if (!user) {
+        return res.status(401).json({ user: undefined });
+    }
+    return res.status(200).json({ user });
+}
+app.get('/getuser', verifyjwt, getUser);
+
+
+
+
+mongoose.connect(`${process.env.DB_PATH}/${process.env.DB_NAME}`)
+    .then(async () => {
+        console.log("✅ MongoDB Connected Successfully!");
+        console.log("📌 Database:", mongoose.connection.name);
+        app.listen(PORT, () => {
+            console.log("http://localhost:" + PORT);
+        })
+
+        
+    })
+    .catch(err => {
+        console.log(err);
+        console.log("❌ MongoDB Connection Failed!");
+        console.log(error.message);
+    })
